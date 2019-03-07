@@ -3,9 +3,10 @@ import unittest
 import bcrypt
 
 from whiskedinRESTAPI.app import db, app, User
+from whiskedinRESTAPI.whiskedinRESTAPI.whisked_test import WhiskedTest
 
 
-class UserTests(unittest.TestCase):
+class UserTests(WhiskedTest):
     TEST_DB = 'test.db'
 
     ############################
@@ -13,14 +14,7 @@ class UserTests(unittest.TestCase):
     ############################
 
     # executed prior to each test
-    def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + self.TEST_DB
-        self.app = app.test_client()
-        db.drop_all()
-        db.create_all()
+
 
     def test_get_user_empty(self):
         username = 'username'
