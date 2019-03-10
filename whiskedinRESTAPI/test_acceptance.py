@@ -1,5 +1,4 @@
 import os
-import unittest
 
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
@@ -9,14 +8,14 @@ from whiskedinRESTAPI.whiskedinRESTAPI.app import db
 from whiskedinRESTAPI.whiskedinRESTAPI.whisked_test import WhiskedTest
 
 
-class Sprint1AcceptanceTestCases(WhiskedTest):
+class Sprint1AcceptanceTests(WhiskedTest):
     '''
     Acceptance tests
 
     Test out deployment
     '''
     def setUp(self):
-        self.driver = webdriver.Chrome(os.getcwd() + '/Drivers/chromedriver')
+        self.driver = webdriver.Chrome(os.getcwd() + '/whiskedinRESTAPI/whiskedinRESTAPI/Drivers/chromedriver')
         self.wait = WebDriverWait(self.driver, 10)
         db.drop_all()
         db.create_all()

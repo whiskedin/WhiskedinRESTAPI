@@ -2,19 +2,12 @@ import unittest
 
 import bcrypt
 
-from whiskedinRESTAPI.app import db, app, User
+from whiskedinRESTAPI.whiskedinRESTAPI.app import User, db
 from whiskedinRESTAPI.whiskedinRESTAPI.whisked_test import WhiskedTest
 
 
 class UserTests(WhiskedTest):
     TEST_DB = 'test.db'
-
-    ############################
-    #### setup and teardown ####
-    ############################
-
-    # executed prior to each test
-
 
     def test_get_user_empty(self):
         username = 'username'
