@@ -82,7 +82,7 @@ def whisky():
         if 's' in request.args:
             #TODO: KEEP IN MIND USER
             s = request.args['s']
-            whiskies = [whisky.build_dict() for whisky in Whisky.get_whiskies(s)]
+            whiskies = [whisky.build_dict() for whisky in Whisky.get_whiskies(s, uid)]
         else:
             whiskies = [whisk.build_dict() for whisk in user.whiskies]
         return jsonify(whiskies=whiskies)
@@ -181,10 +181,10 @@ class Whisky(db.Model):
         return whisky
 
     @staticmethod
-    def get_whiskies(search):
+    def get_whiskies(search, uid):
         whiskies = Whisky.query.filter(Whisky.name.like(search) | Whisky.company.like(search) |
                                        Whisky.type.like(search) | Whisky.age.like(search) | Whisky.origin.like(search) |
-                                       Whisky.flavor.like(search) | Whisky.description.like(search))
+                                       Whisky.flavor.like(search) | Whisky.description.like(search), created_by=uid)
         return whiskies
 
     def build_dict(self):
