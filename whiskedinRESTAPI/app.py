@@ -80,6 +80,7 @@ def whisky():
         username = get_jwt_identity()
         user = User.get_user(username)
         if 's' in request.args:
+            #TODO: KEEP IN MIND USER
             s = request.args['s']
             whiskies = [whisky.build_dict() for whisky in Whisky.get_whiskies(s)]
         else:
