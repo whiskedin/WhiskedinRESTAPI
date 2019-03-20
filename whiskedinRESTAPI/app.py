@@ -34,9 +34,7 @@ def register_user():
     if User.get_user(username):
         return jsonify(msg='username already exists'), 400
 
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    User.create_user(username, hashed_password)
+    User.create_user(username, password)
     token = create_access_token(identity=username)
     return jsonify(access_token=token), 201
 
@@ -80,9 +78,8 @@ def whisky():
         username = get_jwt_identity()
         user = User.get_user(username)
         if 's' in request.args:
-            #TODO: KEEP IN MIND USER
             s = request.args['s']
-            whiskies = [whisky.build_dict() for whisky in Whisky.get_whiskies(s, uid)]
+            whiskies = [whisk.build_dict() for whisk in Whisky.get_whiskies(s, user.uid)]
         else:
             whiskies = [whisk.build_dict() for whisk in user.whiskies]
         return jsonify(whiskies=whiskies)
@@ -97,9 +94,8 @@ def whisky():
         return jsonify(whisky=whisky.build_dict()), 201
 
     elif request.method == 'PUT':
-        username = get_jwt_identity()
         form = request.form
-        updated_whisky = Whisky.update_whisky(**form)
+        updated_whisky = Whisky.update_whisky(form)
         return jsonify(whisky=updated_whisky.build_dict()), 202
 
 
@@ -119,7 +115,6 @@ class User(db.Model):
     whiskies = db.relationship('Whisky', backref='user')
 
     def __init__(self, *args, **kwargs):
-        #TODO: hash password here
         super(User, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -132,7 +127,8 @@ class User(db.Model):
 
     @staticmethod
     def create_user(username, password):
-        new_user = User(username=username, hashed_password=password)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        new_user = User(username=username, hashed_password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
         return new_user
@@ -168,23 +164,24 @@ class Whisky(db.Model):
         return new_whisky
 
     @staticmethod
-    def update_whisky(wid, **kwargs):
-        whisky = Whisky.get_wisky(wid)
-        for key, value in kwargs.items():
+    def update_whisky(form):
+        whisky = Whisky.get_wisky(form['wid'])
+        for key, value in form.items():
             whisky.__setattr__(key, value)
         db.session.commit()
         return whisky
 
     @staticmethod
     def get_wisky(wid):
-        whisky = Whisky.query.filter(wid=wid).first()
+        whisky = Whisky.query.filter_by(wid=wid).first()
         return whisky
 
     @staticmethod
     def get_whiskies(search, uid):
-        whiskies = Whisky.query.filter(Whisky.name.like(search) | Whisky.company.like(search) |
-                                       Whisky.type.like(search) | Whisky.age.like(search) | Whisky.origin.like(search) |
-                                       Whisky.flavor.like(search) | Whisky.description.like(search), created_by=uid)
+        whiskies = Whisky.query.filter(Whisky.name.ilike(search) | Whisky.company.ilike(search) |
+                                       Whisky.type.ilike(search) | Whisky.origin.ilike(search) |
+                                       Whisky.flavor.ilike(search) |
+                                       Whisky.description.ilike(search)).filter_by(created_by=uid)
         return whiskies
 
     def build_dict(self):
