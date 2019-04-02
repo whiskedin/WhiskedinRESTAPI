@@ -1,1 +1,5 @@
 language: python
+install: 
+  -pip install -r requirements/dev.txt
+script:
+  python -m pytest test_acceptance.py
