@@ -1,0 +1,5 @@
+language: python
+install: 
+  -pip install -r requirements/dev.txt
+script:
+  python -m pytest whiskedinRESTAPI/test_acceptance.py
