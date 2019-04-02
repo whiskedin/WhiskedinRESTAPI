@@ -10,9 +10,8 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 cors = CORS(app, resources={r'/*': {"origins": "*"}})
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://flwxebtzpunihb:b2a44a6922588c' \
-                                        'a95d9acae686c4604e5feffe421f4127a04812f942d11e29' \
-                                        '5d@ec2-50-17-193-83.compute-1.amazonaws.com:5432/d5shgthfdb4nb0'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://flwxebtzpunihb:b2a44a6922588ca95d9acae686c4604e5feffe421f4127a04812' \
+                                        'f942d11e295d@ec2-50-17-193-83.compute-1.amazonaws.com:5432/d5shgthfdb4nb0'
 app.config['JWT_SECRET_KEY'] = 'verysecretkey'
 
 db = SQLAlchemy(app)
@@ -35,7 +34,9 @@ def register_user():
     if User.get_user(username):
         return jsonify(msg='username already exists'), 400
 
-    User.create_user(username, password)
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    User.create_user(username, hashed_password)
     token = create_access_token(identity=username)
     return jsonify(access_token=token), 201
 
@@ -60,7 +61,7 @@ def login():
         return jsonify(msg='Invalid username or password'), 400
 
 
-@app.route('/whiskies', methods=['GET', 'POST', 'PUT'])
+@app.route('/whisky', methods=['GET', 'POST', 'PUT'])
 @jwt_required
 def whisky():
     '''
@@ -78,11 +79,7 @@ def whisky():
     if request.method == 'GET':
         username = get_jwt_identity()
         user = User.get_user(username)
-        if 's' in request.args:
-            s = request.args['s']
-            whiskies = [whisk.build_dict() for whisk in Whisky.get_whiskies(s, user.uid)]
-        else:
-            whiskies = [whisk.build_dict() for whisk in user.whiskies]
+        whiskies = [whisk.build_dict() for whisk in user.whiskies]
         return jsonify(whiskies=whiskies)
 
     elif request.method == 'POST':
@@ -95,8 +92,9 @@ def whisky():
         return jsonify(whisky=whisky.build_dict()), 201
 
     elif request.method == 'PUT':
+        username = get_jwt_identity()
         form = request.form
-        updated_whisky = Whisky.update_whisky(form)
+        updated_whisky = Whisky.update_whisky(**form)
         return jsonify(whisky=updated_whisky.build_dict()), 202
 
 
@@ -116,6 +114,7 @@ class User(db.Model):
     whiskies = db.relationship('Whisky', backref='user')
 
     def __init__(self, *args, **kwargs):
+        #TODO: hash password here
         super(User, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -128,8 +127,7 @@ class User(db.Model):
 
     @staticmethod
     def create_user(username, password):
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        new_user = User(username=username, hashed_password=hashed_password)
+        new_user = User(username=username, hashed_password=password)
         db.session.add(new_user)
         db.session.commit()
         return new_user
@@ -165,25 +163,18 @@ class Whisky(db.Model):
         return new_whisky
 
     @staticmethod
-    def update_whisky(form):
-        whisky = Whisky.get_wisky(form['wid'])
-        for key, value in form.items():
+    def update_whisky(wid, **kwargs):
+        whisky = Whisky.get_wisky(wid)
+        for key, value in kwargs.items():
             whisky.__setattr__(key, value)
         db.session.commit()
         return whisky
 
     @staticmethod
     def get_wisky(wid):
-        whisky = Whisky.query.filter_by(wid=wid).first()
+        whisky = Whisky.query.filter(wid=wid).first()
         return whisky
 
-    @staticmethod
-    def get_whiskies(search, uid):
-        whiskies = Whisky.query.filter(Whisky.name.ilike(search) | Whisky.company.ilike(search) |
-                                       Whisky.type.ilike(search) | Whisky.origin.ilike(search) |
-                                       Whisky.flavor.ilike(search) |
-                                       Whisky.description.ilike(search)).filter_by(created_by=uid)
-        return whiskies
 
     def build_dict(self):
         whisk = {
